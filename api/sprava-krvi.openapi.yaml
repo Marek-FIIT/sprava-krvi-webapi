@@ -1,0 +1,306 @@
+openapi: 3.0.0
+servers:
+  - description: Cluster Endpoint
+    url: /api
+info:
+  description: Management of blood donors and blood units
+  version: "1.0.0"
+  title: Blood management API
+  contact:
+    email: xsykoram3@stuba.sk
+  license:
+    name: CC BY 4.0
+    url: "https://creativecommons.org/licenses/by/4.0/"
+tags:
+  - name: donors
+    description: Blood donors API
+  - name: units
+    description: Blood units API    
+
+paths:
+  "/donors":
+    get:
+      tags:
+        - donors
+      summary: Provides the list of blood donors
+      operationId: getDonors
+      description: Returns the donors with the required blood type and RH factor, or all registered donors if no parameters were supplied
+      parameters:
+        - in: query
+          name: bloodType
+          description: If needed, provide a specific blood type
+          required: false
+          schema:
+            type: string
+            enum: ["AB", "A", "B", "0"]
+        - in: query
+          name: bloodRH
+          description: If needed, provide a specific blood RH factor
+          required: false
+          schema:
+            type: string
+            enum: ["+", "-"]
+        - in: query
+          name: eligible
+          description: filter only eligible donors
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: value of the donor list entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DonorListEntry"
+              examples:
+                response:
+                  $ref: "#/components/examples/DonorListEntriesExample"
+    post:
+      tags:
+        - donors
+      summary: Creates new donor
+      operationId: createDonor
+      description: Creates a new donor based on the request payload
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Donor"
+            examples:
+              request-sample:
+                $ref: "#/components/examples/DonorExample"
+        description: Donor data
+        required: true
+      responses:
+        "201":
+          description: Donor data with the id attribute filled in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donor"
+              examples:
+                updated-response:
+                  $ref: "#/components/examples/DonorExample"
+        "400":
+          description: Invalid request payload.
+
+  "/donors/{donorId}":
+    get:
+      tags:
+        - donors
+      summary: Provides the detail of a donor
+      operationId: getDonor
+      description: Returns the detailed information of the desired donor based on the donor id
+      parameters:
+        - in: path
+          name: donorId
+          description: Id of the desired donor
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The donor data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donor"
+              examples:
+                response:
+                  $ref: "#/components/examples/DonorExample"
+        "404":
+          description: No donor with such ID exists
+    put:
+      tags:
+        - donors
+      summary: updates the data of the specified donor
+      operationId: updateDonor
+      description: Updates the donor specified by the donor id based on the request payload
+      parameters:
+        - in: path
+          name: donorId
+          description: Id of the desired donor
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Donor"
+            examples:
+              request-sample:
+                $ref: "#/components/examples/DonorExample"
+        description: Donor data
+        required: true
+      responses:
+        "200":
+          description: Donor data with the id attribute filled in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donor"
+              examples:
+                updated-response:
+                  $ref: "#/components/examples/DonorExample"
+        "400":
+          description: Invalid request payload.
+        "404":
+          description: No donor with such ID exists
+    delete:
+      tags:
+        - donors
+      summary: Deletes the specific donor
+      operationId: deleteDonor
+      description: Use this method to delete the specific blood donor.
+      parameters:
+        - in: path
+          name: donorId
+          description: Id of the desired donor
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Item deleted
+        "404":
+          description: No donor with such ID exists
+
+
+components:
+  schemas:
+    Donor:
+      description: "Contains the data being stored, regaring a single blood donor"
+      type: object
+      required: [birth_number, first_name, last_name, postal_code, eligible]
+      properties:
+        id:
+          type: string
+          example: "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e"
+        birth_number:
+          type: string
+          example: "9908121367"
+        first_name:
+          type: string
+          example: "Peter"
+        last_name:
+          type: string
+          example: "Marcin"
+        postal_code:
+          type: string
+          example: "83407"
+          description: for broad location
+        blood_type:
+          type: string
+          example: "AB"
+        blood_rh:
+          type: string
+          example: "+"
+        eligible:
+          type: boolean
+          example: true
+        last_donation:
+          type: string
+          format: date-time
+          example: "2023-01-02T12:00:00Z"
+        email:
+          type: string
+          format: email
+          example: example.donor@mail.com
+        phone_number:
+          type: string
+          example: "+421905734825"
+        diseases:
+          type: array
+          items: 
+            type: string
+          example: ["HIV", "Diabetes"]
+        medications:
+          type: array
+          items: 
+            type: string
+          example: ["Paralen"]
+        substances:
+          type: array
+          items: 
+            type: string
+          example: ["Alcohol", "Cocaine"]
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-01-01T12:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2023-01-02T12:00:00Z"
+      example:
+        $ref: "#/components/examples/DonorExample"
+
+    DonorListEntry:
+      description: "Contains simplified data, regaring a single blood donor"
+      type: object
+      required: [id, first_name, last_name, postal_code, eligible]
+      properties:
+        id:
+          type: string
+          example: "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e"
+        first_name:
+          type: string
+          example: "Peter"
+        last_name:
+          type: string
+          example: "Marcin"
+        blood_type:
+          type: string
+          example: "AB"
+        blood_rh:
+          type: string
+          example: "+"
+        eligible:
+          type: boolean
+          example: true
+        last_donation:
+          type: string
+          format: date-time
+          example: "2023-01-02T12:00:00Z"
+      example:
+        $ref: "#/components/examples/DonorListEntryExample"
+  
+
+  examples:
+    DonorExample:
+      summary: Example of a blood donor record
+      description: This example demonstrates a typical record for a blood donor including personal information, blood type, and medical background.
+      value:
+        id: "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e"
+        birth_number: "9908121367"
+        first_name: "Peter"
+        last_name: "Marcin"
+        postal_code: "83407"
+        blood_type: "AB"
+        blood_rh: "+"
+        eligible: true
+        last_donation: "2023-01-02T12:00:00Z"
+        email: "example.donor@mail.com"
+        phone_number: "+421905734825"
+        diseases: ["HIV", "Diabetes"]
+        medications: ["Paralen"]
+        substances: ["Alcohol", "Cocaine"]
+        created_at: "2023-01-01T12:00:00Z"
+        updated_at: "2023-01-02T12:00:00Z"
+
+    DonorListEntryExample:
+      summary: Example of a blood donor list entry
+      description: This example demonstrates a typical entry for a blood donor in a list including basic personal information and donation details.
+      value:
+        id: "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e"
+        first_name: "Peter"
+        last_name: "Marcin"
+        blood_type: "AB"
+        blood_rh: "+"
+        eligible: true
+        last_donation: "2023-01-02T12:00:00Z"
+    
