@@ -1,0 +1,8 @@
+generatorName: go-gin-server
+templateDir: /local/scripts/templates
+outputDir: /local
+inputSpec: /local/api/sprava-krvi.openapi.yaml
+enablePostProcessFile: true
+additionalProperties:
+  apiPath: internal/sprava_krvi
+  packageName: sprava_krvi

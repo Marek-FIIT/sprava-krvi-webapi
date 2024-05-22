@@ -1,0 +1,5 @@
+internal/sprava_krvi/README.md
+internal/sprava_krvi/api_donors.go
+internal/sprava_krvi/model_donor.go
+internal/sprava_krvi/model_donor_list_entry.go
+internal/sprava_krvi/routers.go

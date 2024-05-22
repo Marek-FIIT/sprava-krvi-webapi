@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Marek-FIIT/sprava-krvi-webapi/api"
+	"github.com/Marek-FIIT/sprava-krvi-webapi/internal/sprava_krvi"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,6 +23,7 @@ func main() {
 	engine := gin.New()
 	engine.Use(gin.Recovery())
 	// request routings
+	sprava_krvi.AddRoutes(engine)
 	engine.GET("/openapi", api.HandleOpenApi)
 	engine.Run(":" + port)
 }
