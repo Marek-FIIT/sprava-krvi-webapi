@@ -34,7 +34,7 @@ paths:
             type: string
             enum: ["AB", "A", "B", "0"]
         - in: query
-          name: bloodRH
+          name: bloodRh
           description: If needed, provide a specific blood RH factor
           required: false
           schema:

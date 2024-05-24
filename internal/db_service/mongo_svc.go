@@ -2,6 +2,7 @@ package db_service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -19,6 +20,7 @@ import (
 type DbService[DocType interface{}] interface {
 	CreateDocument(ctx context.Context, id string, document *DocType) error
 	FindDocument(ctx context.Context, id string) (*DocType, error)
+	FindDocuments(ctx context.Context, filter interface{}) ([]*DocType, error)
 	UpdateDocument(ctx context.Context, id string, document *DocType) error
 	DeleteDocument(ctx context.Context, id string) error
 	Disconnect(ctx context.Context) error
@@ -156,8 +158,8 @@ func (this *mongoSvc[DocType]) Disconnect(ctx context.Context) error {
 	return nil
 }
 
-func GetDbService[DocType interface{}](ctx context.Context) (DbService[DocType], error) {
-	value := ctx.Value("db_service_donors")
+func GetDbService[DocType interface{}](ctx context.Context, ctxKey string) (DbService[DocType], error) {
+	value := ctx.Value(ctxKey)
 	if value == nil {
 		return nil, errors.New("db_service_donors not found")
 	}
@@ -214,6 +216,49 @@ func (this *mongoSvc[DocType]) FindDocument(ctx context.Context, id string) (*Do
 		return nil, err
 	}
 	return document, nil
+}
+
+func (this *mongoSvc[DocType]) FindDocuments(ctx context.Context, filter interface{}) ([]*DocType, error) {
+	ctx, contextCancel := context.WithTimeout(ctx, this.Timeout)
+	defer contextCancel()
+	client, err := this.connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db := client.Database(this.DbName)
+	collection := db.Collection(this.Collection)
+
+	filterBytes, err := json.Marshal(filter)
+	if err != nil {
+		return nil, errors.New("could not process filters")
+	}
+	var bsonFilter bson.D
+	err = bson.UnmarshalExtJSON(filterBytes, true, &bsonFilter)
+	if err != nil {
+		return nil, errors.New("could not process filters")
+	}
+	// log.Printf("bson filters: %v", bsonFilter)
+	result, err := collection.Find(ctx, bsonFilter)
+	switch err {
+	case nil:
+	case mongo.ErrNoDocuments:
+		return nil, ErrNotFound
+	default: // other errors - return them
+		return nil, err
+	}
+	var documents []*DocType
+	for result.Next(ctx) {
+		var document *DocType
+		if err := result.Decode(&document); err != nil {
+			return nil, errors.New("some of the documents could not be read")
+		}
+		documents = append(documents, document)
+	}
+	if len(documents) == 0 {
+		return []*DocType{}, nil
+
+	}
+	return documents, nil
 }
 
 func (this *mongoSvc[DocType]) UpdateDocument(ctx context.Context, id string, document *DocType) error {
