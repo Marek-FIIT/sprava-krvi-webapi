@@ -57,7 +57,7 @@ paths:
                   $ref: "#/components/schemas/DonorListEntry"
               examples:
                 response:
-                  $ref: "#/components/examples/DonorListEntriesExample"
+                  $ref: "#/components/examples/DonorListEntryExample"
     post:
       tags:
         - donors
@@ -169,6 +169,203 @@ paths:
         "404":
           description: No donor with such ID exists
 
+  "/units":
+    get:
+      tags:
+        - units
+      summary: Provides the list of blood units
+      operationId: getUnits
+      description: Returns the units with the required blood type and RH factor, or all units if no parameters were supplied
+      parameters:
+        - in: query
+          name: bloodType
+          description: If needed, provide a specific blood type
+          required: false
+          schema:
+            type: string
+            enum: ["AB", "A", "B", "0"]
+        - in: query
+          name: bloodRh
+          description: If needed, provide a specific blood RH factor
+          required: false
+          schema:
+            type: string
+            enum: ["+", "-"]
+        - in: query
+          name: status
+          description: filter based on status
+          required: false
+          schema:
+            type: string
+            enum: ["available", "reserved", "unprocessed", "suspended", "contaminated", "expired"]
+        -in: query
+          name: location
+          description: filter by postal code
+          required: false
+          schema:
+            type: string
+        -in: query
+          name: erythrocytes
+          description: filter by erythrocytes presence
+          required: false
+          schema:
+            type: boolean
+        -in: query
+          name: leukocytes
+          description: filter by leukocytes presence
+          required: false
+          schema:
+            type: boolean
+        -in: query
+          name: platelets
+          description: filter by platelets presence
+          required: false
+          schema:
+            type: boolean
+        -in: query
+          name: plasma
+          description: filter by plasma presence
+          required: false
+          schema:
+            type: boolean
+        -in: query
+          name: frozen
+          description: filter by whether the unit is frozen
+          required: false
+          schema:
+            type: boolean
+
+      responses:
+        "200":
+          description: value of the unit list entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UnitListEntry"
+              examples:
+                response:
+                  $ref: "#/components/examples/UnitListEntriesExample"
+    post:
+      tags:
+        - units
+      summary: Creates new units
+      operationId: createUnits
+      description: Creates new units based on the request payload containing the donor id. The amount of units is specified by query parameter.
+      parameters:
+        - in: query
+          name: amount
+          description: Provide a the amount of units donated
+          required: true
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Unit"
+            examples:
+              request-sample:
+                $ref: "#/components/examples/UnitExample"
+        description: Unit data
+        required: true
+      responses:
+        "201":
+          description: Unit data with the id attribute filled in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unit"
+              examples:
+                updated-response:
+                  $ref: "#/components/examples/UnitExample"
+        "400":
+          description: Invalid request payload.
+
+  "/units/{unitId}":
+    get:
+      tags:
+        - units
+      summary: Provides the detail of the unit
+      operationId: getUnit
+      description: Returns the detailed information of the desired unit based on the unit id
+      parameters:
+        - in: path
+          name: unitId
+          description: Id of the desired unit
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The unit data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unit"
+              examples:
+                response:
+                  $ref: "#/components/examples/UnitExample"
+        "404":
+          description: No unit with such ID exists
+    put:
+      tags:
+        - units
+      summary: updates the data of the specified unit
+      operationId: updateUnit
+      description: Updates the unitt specified by the unit id based on the request payload
+      parameters:
+        - in: path
+          name: unitId
+          description: Id of the desired unit
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Unit"
+            examples:
+              request-sample:
+                $ref: "#/components/examples/UnitExample"
+        description: Unit data
+        required: true
+      responses:
+        "200":
+          description: Unit data with the id attribute filled in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unit"
+              examples:
+                updated-response:
+                  $ref: "#/components/examples/UnitExample"
+        "400":
+          description: Invalid request payload.
+        "404":
+          description: No unit with such ID exists
+    delete:
+      tags:
+        - units
+      summary: Deletes the specific unit
+      operationId: deleteUnit
+      description: Use this method to delete the specific blood unit.
+      parameters:
+        - in: path
+          name: unitId
+          description: Id of the desired unit
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Item deleted
+        "404":
+          description: No unit with such ID exists
+
 
 components:
   schemas:
@@ -271,6 +468,103 @@ components:
       example:
         $ref: "#/components/examples/DonorListEntryExample"
   
+    Unit:
+      description: "Contains the data being stored, regaring a single blood unit"
+      type: object
+      required: [donor_id, location]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        donor_id:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        blood_type:
+          type: string
+          example: "AB"
+        blood_rh:
+          type: string
+          example: "+"
+        status:
+          type: string
+          example: "available"
+        location:
+          type: string
+          example: "83407"
+          description: for broad location
+        contents:
+          type: object
+          properties:
+            hemoglobin:
+              type: float
+              example: 15.87
+            erythrocytes:
+              type: boolean
+              example: true
+            leukocytes:
+              type: boolean
+              example: true
+            platelets :
+              type: boolean
+              example: true
+            plasma:
+              type: boolean
+              example: true
+            additional:
+              type: array
+              items: 
+                type: string
+              example: ["alcohol"]
+        frozen:
+          type: boolean
+          example: false
+        diseases:
+          type: array
+          items: 
+            type: string
+          example: ["HIV", "Diabetes"]
+        expiration:
+          type: string
+          format: date-time
+          example: "2023-01-01T12:00:00Z"
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-01-01T12:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2023-01-02T12:00:00Z"
+      example:
+        $ref: "#/components/examples/UnitExample"
+
+    UnitListEntry:
+      description: "Contains simplified blood unit data"
+      type: object
+      required: [id, status, location]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        blood_type:
+          type: string
+          example: "AB"
+        blood_rh:
+          type: string
+          example: "+"
+        status:
+          type: string
+          example: "available"
+        location:
+          type: string
+          example: "83407"
+          description: for broad location
+      example:
+        $ref: "#/components/examples/UnitListEntryExample"
+
 
   examples:
     DonorExample:
@@ -305,4 +599,37 @@ components:
         blood_rh: "+"
         eligible: true
         last_donation: "2023-01-02T12:00:00Z"
+
+    UnitExample:
+      summary: Example of a blood unit record
+      description: This example demonstrates a typical record for a blood unit including donor information, blood type, status, and medical details.
+      value:
+        id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        donor_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        blood_type: "AB"
+        blood_rh: "+"
+        status: "available"
+        location: "83407"
+        contents:
+          hemoglobin: 15.87
+          erythrocytes: true
+          leukocytes: true
+          platelets: true
+          plasma: true
+          additional: ["alcohol"]
+        frozen: false
+        diseases: ["HIV", "Diabetes"]
+        expiration: "2023-01-01T12:00:00Z"
+        created_at: "2023-01-01T12:00:00Z"
+        updated_at: "2023-01-02T12:00:00Z"
+
+    UnitListEntryExample:
+      summary: Example of a blood unit list entry
+      description: This example demonstrates a simplified entry for a blood unit in a list including basic information like blood type, RH factor, status, and location.
+      value:
+        id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        blood_type: "AB"
+        blood_rh: "+"
+        status: "available"
+        location: "83407"
     

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	// "reflect"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -278,6 +280,36 @@ func (this *mongoSvc[DocType]) UpdateDocument(ctx context.Context, id string, do
 	default: // other errors - return them
 		return result.Err()
 	}
+
+	// Preserve created_at
+	// var rawDocument bson.Raw
+	// if err := result.Decode(&rawDocument); err != nil {
+	// 	return err
+	// }
+	// log.Printf("raw document: %v", rawDocument)
+	// if CreatedAt, found := rawDocument.Lookup("createdat").StringValueOK(); found {
+	// 	field := reflect.ValueOf(document).Elem().FieldByName("createdAt")
+	// 	if field.IsValid() && field.CanSet() {
+	// 		switch field.Kind() {
+	// 		case reflect.String:
+	// 			field.SetString(CreatedAt)
+	// 		default:
+	// 			panic("failed to preserve created_at") // TODO: logging
+	// 		}
+	// 	}
+	// }
+
+	// field := reflect.ValueOf(document).Elem().FieldByName("UpdatedAt")
+	// if field.IsValid() && field.CanSet() {
+	// 	switch field.Kind() {
+	// 	case reflect.String:
+	// 		field.SetString(time.Now().Format("Sat Jan 01 2022 00:00:00 GMT+0000 (Coordinated Universal Time)"))
+	// 	default:
+	// 		log.Printf("raw document: %v", field.Kind)
+	// 		panic("failed to set updated_at") // TODO: logging
+	// 	}
+	// }
+
 	_, err = collection.ReplaceOne(ctx, bson.D{{Key: "id", Value: id}}, document)
 	return err
 }
