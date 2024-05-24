@@ -22,6 +22,8 @@ switch ($command) {
         try {
             mongo up --detach
             go run ${ProjectRoot}/cmd/sprava-krvi-api-service
+        }
+        finally {
             mongo down
         }
     }

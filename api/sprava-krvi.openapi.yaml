@@ -179,7 +179,8 @@ components:
       properties:
         id:
           type: string
-          example: "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e"
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
         birth_number:
           type: string
           example: "9908121367"
@@ -246,7 +247,8 @@ components:
       properties:
         id:
           type: string
-          example: "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e"
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
         first_name:
           type: string
           example: "Peter"
@@ -275,7 +277,7 @@ components:
       summary: Example of a blood donor record
       description: This example demonstrates a typical record for a blood donor including personal information, blood type, and medical background.
       value:
-        id: "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e"
+        id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
         birth_number: "9908121367"
         first_name: "Peter"
         last_name: "Marcin"
@@ -296,7 +298,7 @@ components:
       summary: Example of a blood donor list entry
       description: This example demonstrates a typical entry for a blood donor in a list including basic personal information and donation details.
       value:
-        id: "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e"
+        id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
         first_name: "Peter"
         last_name: "Marcin"
         blood_type: "AB"
