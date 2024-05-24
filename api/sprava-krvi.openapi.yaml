@@ -198,37 +198,37 @@ paths:
           schema:
             type: string
             enum: ["available", "reserved", "unprocessed", "suspended", "contaminated", "expired"]
-        -in: query
+        - in: query
           name: location
           description: filter by postal code
           required: false
           schema:
             type: string
-        -in: query
+        - in: query
           name: erythrocytes
           description: filter by erythrocytes presence
           required: false
           schema:
             type: boolean
-        -in: query
+        - in: query
           name: leukocytes
           description: filter by leukocytes presence
           required: false
           schema:
             type: boolean
-        -in: query
+        - in: query
           name: platelets
           description: filter by platelets presence
           required: false
           schema:
             type: boolean
-        -in: query
+        - in: query
           name: plasma
           description: filter by plasma presence
           required: false
           schema:
             type: boolean
-        -in: query
+        - in: query
           name: frozen
           description: filter by whether the unit is frozen
           required: false

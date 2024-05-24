@@ -22,4 +22,9 @@ func AddRoutes(engine *gin.Engine) {
     api.addRoutes(group)
   }
   
+  {
+    api := newUnitsAPI()
+    api.addRoutes(group)
+  }
+  
 }
