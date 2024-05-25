@@ -1,0 +1,5 @@
+internal/sprava_krvi/api_*
+internal/sprava_krvi/model_*
+internal/sprava_krvi/routers.go
+build/
+deployments/
