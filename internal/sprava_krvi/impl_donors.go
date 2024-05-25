@@ -14,24 +14,30 @@ func (this *implDonorsAPI) GetDonors(ctx *gin.Context) {
 	// ctx.AbortWithStatus(http.StatusNotImplemented)
 	filters := make(map[string]interface{})
 	if bloodType := ctx.Query("bloodType"); bloodType != "" {
-		filters["bloodtype"] = bloodType
+		if bloodType != "null" {
+			filters["bloodtype"] = bloodType
+		}
 	}
 	if bloodRh := ctx.Query("bloodRh"); bloodRh != "" {
-		filters["bloodrh"] = bloodRh
+		if bloodRh != "null" {
+			filters["bloodrh"] = bloodRh
+		}
 	}
 	if eligible := ctx.Query("eligible"); eligible != "" {
-		eligibleBool, err := strconv.ParseBool(eligible)
-		if err != nil {
-			ctx.JSON(
-				http.StatusBadRequest,
-				gin.H{
-					"status":  http.StatusBadRequest,
-					"message": "Could not parse filters",
-				},
-			)
-			return
+		if eligible != "null" {
+			eligibleBool, err := strconv.ParseBool(eligible)
+			if err != nil {
+				ctx.JSON(
+					http.StatusBadRequest,
+					gin.H{
+						"status":  http.StatusBadRequest,
+						"message": "Could not parse filters",
+					},
+				)
+				return
+			}
+			filters["eligible"] = eligibleBool
 		}
-		filters["eligible"] = eligibleBool
 	}
 
 	// log.Printf("filters: %v", filters)
