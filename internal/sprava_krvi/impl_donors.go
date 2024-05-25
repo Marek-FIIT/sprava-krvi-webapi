@@ -179,6 +179,7 @@ func (this *implDonorsAPI) CreateDonor(ctx *gin.Context) {
 
 	if donor.Id == "" {
 		donor.Id = uuid.New().String()
+		donor.LastDonation = time.Now()
 		donor.CreatedAt = time.Now()
 		donor.UpdatedAt = time.Now()
 	}

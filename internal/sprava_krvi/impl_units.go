@@ -12,6 +12,7 @@ import (
 
 // CreateUnits - Creates new units
 func (this *implUnitsAPI) CreateUnits(ctx *gin.Context) {
+	/* Process request data */
 	sAmount := ctx.Query("amount")
 	amount, err := strconv.Atoi(sAmount)
 	if err != nil {
@@ -52,7 +53,18 @@ func (this *implUnitsAPI) CreateUnits(ctx *gin.Context) {
 		unit.UpdatedAt = time.Now()
 	}
 
-	db, err := db_service.GetDbService[Unit](ctx, "db_service_units")
+	/* Validate & update donor */
+	if unit.DonorId == "" {
+		ctx.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"status":  "Bad request",
+				"message": "Donor Id is mandatory",
+			})
+		return
+	}
+
+	dbDonor, err := db_service.GetDbService[Donor](ctx, "db_service_donors")
 	if err != nil {
 		ctx.JSON(
 			http.StatusInternalServerError,
@@ -64,17 +76,73 @@ func (this *implUnitsAPI) CreateUnits(ctx *gin.Context) {
 		return
 	}
 
-	// transaction, err := db.BeginTransaction(ctx)
-	// if err != nil {
-	// 	ctx.JSON(
-	// 		http.StatusBadGateway,
-	// 		gin.H{
-	// 			"status":  "Bad Gateway",
-	// 			"message": "failed to initialize transaction",
-	// 			"error":   err.Error(),
-	// 		})
-	// 	return
-	// }
+	donor, err := dbDonor.FindDocument(ctx, unit.DonorId)
+	switch err {
+	case nil:
+
+	case db_service.ErrNotFound:
+		ctx.JSON(
+			http.StatusNotFound,
+			gin.H{
+				"status":  "Not Found",
+				"message": "Donor not found",
+				"error":   err.Error(),
+			},
+		)
+		return
+	default:
+		ctx.JSON(
+			http.StatusBadGateway,
+			gin.H{
+				"status":  "Bad Gateway",
+				"message": "Failed to load donor from database",
+				"error":   err.Error(),
+			})
+		return
+	}
+
+	donor.LastDonation = time.Now()
+	donor.UpdatedAt = time.Now()
+
+	err = dbDonor.UpdateDocument(ctx, unit.DonorId, donor)
+	switch err {
+	case nil:
+
+	case db_service.ErrNotFound:
+		ctx.JSON(
+			http.StatusNotFound,
+			gin.H{
+				"status":  "Not Found",
+				"message": "Donor was deleted while processing the request",
+				"error":   err.Error(),
+			},
+		)
+		return
+	default:
+		ctx.JSON(
+			http.StatusBadGateway,
+			gin.H{
+				"status":  "Bad Gateway",
+				"message": "Failed to update the donor in the database",
+				"error":   err.Error(),
+			},
+		)
+		return
+	}
+
+	/* Create multiple blood units */
+	dbUnit, err := db_service.GetDbService[Unit](ctx, "db_service_units")
+	if err != nil {
+		ctx.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"status":  "Internal Server Error",
+				"message": "failed to access db_service",
+				"error":   err.Error(),
+			})
+		return
+	}
+
 	var ids []string
 	var units []*Unit
 	for i := 0; i < amount; i++ {
@@ -82,41 +150,9 @@ func (this *implUnitsAPI) CreateUnits(ctx *gin.Context) {
 		unitCopy.Id = uuid.New().String()
 		ids = append(ids, unitCopy.Id)
 		units = append(units, &unitCopy)
-		// err = transaction.CreateDocument(ctx, unitCopy.Id, &unitCopy)
-		// switch err {
-		// case nil:
 
-		// case db_service.ErrConflict:
-		// 	ctx.JSON(
-		// 		http.StatusConflict,
-		// 		gin.H{
-		// 			"status":  "Conflict",
-		// 			"message": "unit already exists",
-		// 			"error":   err.Error(),
-		// 		},
-		// 	)
-		// 	err = transaction.Rollback()
-		// 	if err != nil {
-		// 		log.Printf("transaction rollback failed")
-		// 	}
-		// 	return
-		// default:
-		// 	ctx.JSON(
-		// 		http.StatusBadGateway,
-		// 		gin.H{
-		// 			"status":  "Bad Gateway",
-		// 			"message": "Failed to create unit in database",
-		// 			"error":   err.Error(),
-		// 		},
-		// 	)
-		// 	err = transaction.Rollback()
-		// 	if err != nil {
-		// 		log.Printf("transaction rollback failed")
-		// 	}
-		// 	return
-		// }
 	}
-	err = db.CreateDocuments(ctx, ids, units)
+	err = dbUnit.CreateDocuments(ctx, ids, units)
 	switch err {
 	case nil:
 
@@ -141,18 +177,7 @@ func (this *implUnitsAPI) CreateUnits(ctx *gin.Context) {
 		)
 		return
 	}
-	// err = transaction.Commit()
-	// if err != nil {
-	// 	ctx.JSON(
-	// 		http.StatusBadGateway,
-	// 		gin.H{
-	// 			"status":  "Bad Gateway",
-	// 			"message": "Failed to commit transaction",
-	// 			"error":   err.Error(),
-	// 		},
-	// 	)
-	// 	return
-	// }
+
 	ctx.JSON(
 		http.StatusCreated,
 		units,
