@@ -399,6 +399,7 @@ func (this *implUnitsAPI) UpdateUnit(ctx *gin.Context) {
 		)
 		return
 	}
+	unit.Id = existing_unit.Id
 	unit.CreatedAt = existing_unit.CreatedAt
 	unit.UpdatedAt = time.Now()
 	err = db.UpdateDocument(ctx, unitId, &unit)

@@ -285,6 +285,7 @@ func (this *implDonorsAPI) UpdateDonor(ctx *gin.Context) {
 		)
 		return
 	}
+	donor.Id = existing_donor.Id
 	donor.CreatedAt = existing_donor.CreatedAt
 	donor.UpdatedAt = time.Now()
 	err = db.UpdateDocument(ctx, donorId, &donor)
