@@ -21,6 +21,9 @@ type Unit struct {
 
 	DonorId string `json:"donor_id"`
 
+	// common for all units from one donation
+	DonationId string `json:"donation_id,omitempty"`
+
 	BloodType string `json:"blood_type,omitempty"`
 
 	BloodRh string `json:"blood_rh,omitempty"`

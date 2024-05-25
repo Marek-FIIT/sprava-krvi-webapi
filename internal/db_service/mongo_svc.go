@@ -19,12 +19,58 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+type Transaction[DocType interface{}] interface {
+	Commit() error
+	Rollback() error
+	CreateDocument(ctx context.Context, id string, document *DocType) error
+}
+
+type mongoTransaction[DocType interface{}] struct {
+	session    mongo.Session
+	DbName     string
+	Collection string
+	Timeout    time.Duration
+}
+
+func (this *mongoTransaction[DocType]) CreateDocument(ctx context.Context, id string, document *DocType) error {
+	ctx, contextCancel := context.WithTimeout(ctx, this.Timeout)
+	defer contextCancel()
+
+	db := this.session.Client().Database(this.DbName)
+	collection := db.Collection(this.Collection)
+	result := collection.FindOne(ctx, bson.D{{Key: "id", Value: id}})
+	switch result.Err() {
+	case nil: // no error means there is conflicting document
+		return ErrConflict
+	case mongo.ErrNoDocuments:
+		// do nothing, this is expected
+	default: // other errors - return them
+		return result.Err()
+	}
+
+	_, err := collection.InsertOne(ctx, document)
+	return err
+}
+
+func (t *mongoTransaction[DocType]) Commit() error {
+	err := t.session.CommitTransaction(context.Background())
+	t.session.EndSession(context.Background())
+	return err
+}
+
+func (t *mongoTransaction[DocType]) Rollback() error {
+	err := t.session.AbortTransaction(context.Background())
+	t.session.EndSession(context.Background())
+	return err
+}
+
 type DbService[DocType interface{}] interface {
 	CreateDocument(ctx context.Context, id string, document *DocType) error
 	FindDocument(ctx context.Context, id string) (*DocType, error)
 	FindDocuments(ctx context.Context, filter interface{}) ([]*DocType, error)
 	UpdateDocument(ctx context.Context, id string, document *DocType) error
 	DeleteDocument(ctx context.Context, id string) error
+	BeginTransaction(ctx context.Context) (Transaction[DocType], error)
 	Disconnect(ctx context.Context) error
 }
 
@@ -333,4 +379,23 @@ func (this *mongoSvc[DocType]) DeleteDocument(ctx context.Context, id string) er
 	}
 	_, err = collection.DeleteOne(ctx, bson.D{{Key: "id", Value: id}})
 	return err
+}
+
+func (this *mongoSvc[DocType]) BeginTransaction(ctx context.Context) (Transaction[DocType], error) {
+	client, err := this.connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	session, err := client.StartSession()
+	if err != nil {
+		return nil, err
+	}
+
+	return &mongoTransaction[DocType]{
+		session:    session,
+		Timeout:    this.Timeout,
+		DbName:     this.DbName,
+		Collection: this.Collection,
+	}, nil
 }

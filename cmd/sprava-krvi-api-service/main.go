@@ -47,12 +47,12 @@ func main() {
 		ctx.Next()
 	})
 
-	// dbServiceUnits := db_service.NewMongoService[sprava_krvi.Unit](db_service.MongoServiceConfig{})
-	// defer dbServiceUnits.Disconnect(context.Background())
-	// engine.Use(func(ctx *gin.Context) {
-	// 	ctx.Set("db_service_units", dbServiceUnits)
-	// 	ctx.Next()
-	// })
+	dbServiceUnits := db_service.NewMongoService[sprava_krvi.Unit](db_service.MongoServiceConfig{})
+	defer dbServiceUnits.Disconnect(context.Background())
+	engine.Use(func(ctx *gin.Context) {
+		ctx.Set("db_service_units", dbServiceUnits)
+		ctx.Next()
+	})
 
 	// request routings
 	sprava_krvi.AddRoutes(engine)

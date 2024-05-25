@@ -56,7 +56,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/DonorListEntry"
               examples:
-                response:
+                donor-list-entry:
                   $ref: "#/components/examples/DonorListEntryExample"
     post:
       tags:
@@ -245,8 +245,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/UnitListEntry"
               examples:
-                response:
-                  $ref: "#/components/examples/UnitListEntriesExample"
+                unit-list-entry:
+                  $ref: "#/components/examples/UnitListEntryExample"
     post:
       tags:
         - units
@@ -277,9 +277,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Unit"
+                type: array
+                items:
+                  $ref: "#/components/schemas/Unit"
               examples:
-                updated-response:
+                updated-unit-item:
                   $ref: "#/components/examples/UnitExample"
         "400":
           description: Invalid request payload.
@@ -481,6 +483,11 @@ components:
           type: string
           format: uuid
           example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        donation_id:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          description: common for all units from one donation
         blood_type:
           type: string
           example: "AB"
@@ -606,6 +613,7 @@ components:
       value:
         id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
         donor_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        donation_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
         blood_type: "AB"
         blood_rh: "+"
         status: "available"
