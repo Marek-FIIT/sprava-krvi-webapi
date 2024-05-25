@@ -1,7 +1,6 @@
 package sprava_krvi
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -65,68 +64,95 @@ func (this *implUnitsAPI) CreateUnits(ctx *gin.Context) {
 		return
 	}
 
-	transaction, err := db.BeginTransaction(ctx)
-	if err != nil {
-		ctx.JSON(
-			http.StatusBadGateway,
-			gin.H{
-				"status":  "Bad Gateway",
-				"message": "failed to initialize transaction",
-				"error":   err.Error(),
-			})
-		return
-	}
+	// transaction, err := db.BeginTransaction(ctx)
+	// if err != nil {
+	// 	ctx.JSON(
+	// 		http.StatusBadGateway,
+	// 		gin.H{
+	// 			"status":  "Bad Gateway",
+	// 			"message": "failed to initialize transaction",
+	// 			"error":   err.Error(),
+	// 		})
+	// 	return
+	// }
+	var ids []string
 	var units []*Unit
 	for i := 0; i < amount; i++ {
 		unitCopy := unit
 		unitCopy.Id = uuid.New().String()
+		ids = append(ids, unitCopy.Id)
 		units = append(units, &unitCopy)
-		err = transaction.CreateDocument(ctx, unitCopy.Id, &unitCopy)
-		switch err {
-		case nil:
+		// err = transaction.CreateDocument(ctx, unitCopy.Id, &unitCopy)
+		// switch err {
+		// case nil:
 
-		case db_service.ErrConflict:
-			ctx.JSON(
-				http.StatusConflict,
-				gin.H{
-					"status":  "Conflict",
-					"message": "unit already exists",
-					"error":   err.Error(),
-				},
-			)
-			err = transaction.Rollback()
-			if err != nil {
-				log.Printf("transaction rollback failed")
-			}
-			return
-		default:
-			ctx.JSON(
-				http.StatusBadGateway,
-				gin.H{
-					"status":  "Bad Gateway",
-					"message": "Failed to create unit in database",
-					"error":   err.Error(),
-				},
-			)
-			err = transaction.Rollback()
-			if err != nil {
-				log.Printf("transaction rollback failed")
-			}
-			return
-		}
+		// case db_service.ErrConflict:
+		// 	ctx.JSON(
+		// 		http.StatusConflict,
+		// 		gin.H{
+		// 			"status":  "Conflict",
+		// 			"message": "unit already exists",
+		// 			"error":   err.Error(),
+		// 		},
+		// 	)
+		// 	err = transaction.Rollback()
+		// 	if err != nil {
+		// 		log.Printf("transaction rollback failed")
+		// 	}
+		// 	return
+		// default:
+		// 	ctx.JSON(
+		// 		http.StatusBadGateway,
+		// 		gin.H{
+		// 			"status":  "Bad Gateway",
+		// 			"message": "Failed to create unit in database",
+		// 			"error":   err.Error(),
+		// 		},
+		// 	)
+		// 	err = transaction.Rollback()
+		// 	if err != nil {
+		// 		log.Printf("transaction rollback failed")
+		// 	}
+		// 	return
+		// }
 	}
-	err = transaction.Commit()
-	if err != nil {
+	err = db.CreateDocuments(ctx, ids, units)
+	switch err {
+	case nil:
+
+	case db_service.ErrConflict:
+		ctx.JSON(
+			http.StatusConflict,
+			gin.H{
+				"status":  "Conflict",
+				"message": "A unit already exists",
+				"error":   err.Error(),
+			},
+		)
+		return
+	default:
 		ctx.JSON(
 			http.StatusBadGateway,
 			gin.H{
 				"status":  "Bad Gateway",
-				"message": "Failed to commit transaction",
+				"message": "Failed to create a unit in database",
 				"error":   err.Error(),
 			},
 		)
 		return
 	}
+	// err = transaction.Commit()
+	// if err != nil {
+	// 	ctx.JSON(
+	// 		http.StatusBadGateway,
+	// 		gin.H{
+	// 			"status":  "Bad Gateway",
+	// 			"message": "Failed to commit transaction",
+	// 			"error":   err.Error(),
+	// 		},
+	// 	)
+	// 	return
+	// }
 	ctx.JSON(
 		http.StatusCreated,
 		units,

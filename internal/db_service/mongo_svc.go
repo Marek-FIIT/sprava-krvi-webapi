@@ -49,6 +49,7 @@ func (this *mongoTransaction[DocType]) CreateDocument(ctx context.Context, id st
 	}
 
 	_, err := collection.InsertOne(ctx, document)
+	log.Printf("Insert error%v", err)
 	return err
 }
 
@@ -66,6 +67,7 @@ func (t *mongoTransaction[DocType]) Rollback() error {
 
 type DbService[DocType interface{}] interface {
 	CreateDocument(ctx context.Context, id string, document *DocType) error
+	CreateDocuments(ctx context.Context, ids []string, documents []*DocType) error
 	FindDocument(ctx context.Context, id string) (*DocType, error)
 	FindDocuments(ctx context.Context, filter interface{}) ([]*DocType, error)
 	UpdateDocument(ctx context.Context, id string, document *DocType) error
@@ -130,9 +132,9 @@ func NewMongoService[DocType interface{}](config MongoServiceConfig) DbService[D
 		svc.DbName = enviro("API_MONGODB_DATABASE", "ss-sprava-krvi")
 	}
 
-	if svc.Collection == "" {
-		svc.Collection = enviro("API_MONGODB_COLLECTION", "donor")
-	}
+	// if svc.Collection == "" {
+	// 	svc.Collection = enviro("API_MONGODB_COLLECTION", "donor")
+	// }
 
 	if svc.Timeout == 0 {
 		seconds := enviro("API_MONGODB_TIMEOUT_SECONDS", "10")
@@ -209,7 +211,7 @@ func (this *mongoSvc[DocType]) Disconnect(ctx context.Context) error {
 func GetDbService[DocType interface{}](ctx context.Context, ctxKey string) (DbService[DocType], error) {
 	value := ctx.Value(ctxKey)
 	if value == nil {
-		return nil, errors.New("db_service_donors not found")
+		return nil, errors.New("db_service not found")
 	}
 
 	db, ok := value.(DbService[DocType])
@@ -239,6 +241,35 @@ func (this *mongoSvc[DocType]) CreateDocument(ctx context.Context, id string, do
 	}
 
 	_, err = collection.InsertOne(ctx, document)
+	return err
+}
+
+func (this *mongoSvc[DocType]) CreateDocuments(ctx context.Context, ids []string, documents []*DocType) error {
+	ctx, contextCancel := context.WithTimeout(ctx, this.Timeout)
+	defer contextCancel()
+	client, err := this.connect(ctx)
+	if err != nil {
+		return err
+	}
+	db := client.Database(this.DbName)
+	collection := db.Collection(this.Collection)
+
+	var interfaceDocs []interface{}
+	for index, doc := range documents {
+		result := collection.FindOne(ctx, bson.D{{Key: "id", Value: ids[index]}})
+		switch result.Err() {
+		case nil: // no error means there is conflicting document
+			return ErrConflict
+		case mongo.ErrNoDocuments:
+			// do nothing, this is expected
+		default: // other errors - return them
+			return result.Err()
+		}
+
+		interfaceDocs = append(interfaceDocs, doc)
+	}
+
+	_, err = collection.InsertMany(ctx, interfaceDocs)
 	return err
 }
 
@@ -381,6 +412,7 @@ func (this *mongoSvc[DocType]) DeleteDocument(ctx context.Context, id string) er
 	return err
 }
 
+// Unused :(
 func (this *mongoSvc[DocType]) BeginTransaction(ctx context.Context) (Transaction[DocType], error) {
 	client, err := this.connect(ctx)
 	if err != nil {
@@ -388,6 +420,11 @@ func (this *mongoSvc[DocType]) BeginTransaction(ctx context.Context) (Transactio
 	}
 
 	session, err := client.StartSession()
+	if err != nil {
+		return nil, err
+	}
+
+	err = session.StartTransaction()
 	if err != nil {
 		return nil, err
 	}

@@ -40,14 +40,14 @@ func main() {
 	engine.Use(corsMiddleware)
 
 	// setup context update  middleware
-	dbServiceDonors := db_service.NewMongoService[sprava_krvi.Donor](db_service.MongoServiceConfig{})
+	dbServiceDonors := db_service.NewMongoService[sprava_krvi.Donor](db_service.MongoServiceConfig{Collection: "donor"})
 	defer dbServiceDonors.Disconnect(context.Background())
 	engine.Use(func(ctx *gin.Context) {
 		ctx.Set("db_service_donors", dbServiceDonors)
 		ctx.Next()
 	})
 
-	dbServiceUnits := db_service.NewMongoService[sprava_krvi.Unit](db_service.MongoServiceConfig{})
+	dbServiceUnits := db_service.NewMongoService[sprava_krvi.Unit](db_service.MongoServiceConfig{Collection: "unit"})
 	defer dbServiceUnits.Disconnect(context.Background())
 	engine.Use(func(ctx *gin.Context) {
 		ctx.Set("db_service_units", dbServiceUnits)
