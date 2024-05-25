@@ -96,7 +96,6 @@ func (this *implDonorsAPI) GetDonors(ctx *gin.Context) {
 func (this *implDonorsAPI) GetDonor(ctx *gin.Context) {
 	// ctx.AbortWithStatus(http.StatusNotImplemented)
 	donorId := ctx.Param("donorId")
-
 	if donorId == "" {
 		ctx.JSON(
 			http.StatusBadRequest,
@@ -214,7 +213,6 @@ func (this *implDonorsAPI) CreateDonor(ctx *gin.Context) {
 
 func (this *implDonorsAPI) UpdateDonor(ctx *gin.Context) {
 	donorId := ctx.Param("donorId")
-
 	if donorId == "" {
 		ctx.JSON(
 			http.StatusBadRequest,
@@ -239,7 +237,7 @@ func (this *implDonorsAPI) UpdateDonor(ctx *gin.Context) {
 		return
 	}
 
-	if donorId != donor.Id {
+	if donor.Id != "" && donorId != donor.Id {
 		ctx.JSON(
 			http.StatusBadRequest,
 			gin.H{
@@ -318,7 +316,6 @@ func (this *implDonorsAPI) UpdateDonor(ctx *gin.Context) {
 }
 func (this *implDonorsAPI) DeleteDonor(ctx *gin.Context) {
 	donorId := ctx.Param("donorId")
-
 	if donorId == "" {
 		ctx.JSON(
 			http.StatusBadRequest,

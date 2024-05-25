@@ -334,6 +334,7 @@ func (this *mongoSvc[DocType]) FindDocuments(ctx context.Context, filter interfa
 		documents = append(documents, document)
 	}
 	if len(documents) == 0 {
+		log.Printf("0")
 		return []*DocType{}, nil
 
 	}
